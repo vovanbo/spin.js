@@ -18,9 +18,35 @@
 (this, function() {
   "use strict";
 
+  function get_keyframes_prefix() {
+    var tmp_el, tmp_sheet, rule, parent,
+        prefixes = ["", "-webkit-", "-moz-", "-o-", "-ms-"],
+        success = false;
+
+    tmp_el = document.createElement("style");
+    tmp_el['type'] = "text/css";
+    parent = document.getElementsByTagName('head')[0];
+    parent.appendChild(tmp_el);
+    tmp_sheet = tmp_el.sheet || tmp_el.styleSheet;
+
+    for (var prefix in prefixes) {
+      rule = "@" + prefixes[prefix] + "keyframes name{}";
+      try {
+        tmp_sheet.insertRule(rule, 0);
+        success = true;
+        break;
+      }
+      catch (e) {
+      }
+    }
+    parent.removeChild(tmp_el);
+    return success === true ? prefixes[prefix] : false;
+  }
+
   var prefixes = ['webkit', 'Moz', 'ms', 'O'] /* Vendor prefixes */
     , animations = {} /* Animation rules keyed by their name */
     , useCssAnimations /* Whether to use CSS animations or setTimeout */
+    , keyframes_prefix = get_keyframes_prefix()
 
   /**
    * Utility function to create elements. If no tag name is given,
@@ -62,12 +88,10 @@
     var name = ['opacity', trail, ~~(alpha*100), i, lines].join('-')
       , start = 0.01 + i/lines * 100
       , z = Math.max(1 - (1-alpha) / trail * (100-start), alpha)
-      , prefix = useCssAnimations.substring(0, useCssAnimations.indexOf('Animation')).toLowerCase()
-      , pre = prefix && '-' + prefix + '-' || ''
 
     if (!animations[name]) {
       sheet.insertRule(
-        '@' + pre + 'keyframes ' + name + '{' +
+        '@' + keyframes_prefix + 'keyframes ' + name + '{' +
         '0%{opacity:' + z + '}' +
         start + '%{opacity:' + alpha + '}' +
         (start+0.01) + '%{opacity:1}' +
